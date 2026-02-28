@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.spec
+
+# Debug files
+*_debug.txt
+
+# Test files
+test_sellers.py
+
+# Environment
+.env
+.venv/
+venv/
+
+# Output
+hoadon_tonghop.xlsx
+
+# Binary tools (not needed on Streamlit Cloud)
+poppler-24.08.0/
+tesseract/
+
+# IDE
+.vscode/
+.idea/
+
+# Invoice input files (too large for git)
+invoices_input/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Batch files
+*.bat
+
+# Other scripts
+run_exe.py
+ocr_invoice.py
