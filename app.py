@@ -21,6 +21,46 @@ logger = logging.getLogger(__name__)
 # Configure page
 st.set_page_config(page_title="Invoice Extractor", page_icon="🧾", layout="wide")
 
+# OCR diagnostics in sidebar
+with st.sidebar:
+    st.markdown("### 🔧 OCR Status")
+    try:
+        from extract_invoices import OCR_AVAILABLE, POPPLER_PATH
+        if OCR_AVAILABLE:
+            st.success("✅ OCR Available")
+            import pytesseract
+            import subprocess
+            # Check Tesseract version
+            try:
+                tess_ver = pytesseract.get_tesseract_version()
+                st.info(f"Tesseract: v{tess_ver}")
+            except Exception as e:
+                st.warning(f"Tesseract: {e}")
+            # Check Vietnamese language
+            try:
+                langs = pytesseract.get_languages()
+                has_vie = 'vie' in langs
+                st.info(f"Languages: {', '.join(langs[:5])}")
+                if has_vie:
+                    st.success("✅ Vietnamese OK")
+                else:
+                    st.warning("⚠️ Vietnamese not found")
+            except Exception:
+                st.warning("⚠️ Cannot check languages")
+            # Check Poppler
+            if POPPLER_PATH:
+                st.info(f"Poppler: {POPPLER_PATH}")
+            else:
+                try:
+                    result = subprocess.run(['pdftoppm', '-v'], capture_output=True, text=True, timeout=5)
+                    st.success("✅ Poppler (system)")
+                except Exception:
+                    st.error("❌ Poppler not found")
+        else:
+            st.error("❌ OCR not available")
+    except Exception as e:
+        st.error(f"❌ Error: {e}")
+
 # Category options for dropdown
 CATEGORY_OPTIONS = [
     "Tự động nhận diện",  # Auto-detect based on invoice content
