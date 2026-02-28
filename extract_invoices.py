@@ -542,7 +542,8 @@ def extract_ocr_invoice_fields(text, filename=None):
     # Xang2 fix: Fallback - parse Vietnamese word-based amount when OCR misses numeric value
     # "Tổng số tiền thanh toán bằng chữ: Bảy trăm nghìn đồng" = 700,000
     if not data.get("Số tiền sau"):
-        chu_match = re.search(r'(?:bằng chữ|bang chu)[:\s]*(.+?)(?:đồng|dong|$)', text, re.IGNORECASE)
+        # Streamlit Cloud OCR sometimes returns mixed accents like "bang chữ" or "băng chu"
+        chu_match = re.search(r'(?:b[aáàảãạăắằẳẵặâấầẩẫậ]ng?|bằng)\s*(?:ch[uúùủũụưứừửữự]|chữ)[:\s]*(.+?)(?:đồng|dong|$)', text, re.IGNORECASE)
         if chu_match:
             words = chu_match.group(1).strip().lower()
             vn_num = _parse_vietnamese_words_to_number(words)
