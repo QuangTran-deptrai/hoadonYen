@@ -272,7 +272,14 @@ def ocr_pdf_to_text(pdf_source, filename=None):
         # OCR each page
         full_text = ""
         for i, image in enumerate(images):
-            text = pytesseract.image_to_string(image, lang='vie+eng')
+            # Try Vietnamese+English first, fallback to English only if vie not available
+            try:
+                text = pytesseract.image_to_string(image, lang='vie+eng')
+            except Exception:
+                try:
+                    text = pytesseract.image_to_string(image, lang='vie')
+                except Exception:
+                    text = pytesseract.image_to_string(image, lang='eng')
             full_text += text + "\n"
         
         return full_text
@@ -284,45 +291,58 @@ def ocr_pdf_to_text(pdf_source, filename=None):
 def _parse_vietnamese_words_to_number(text):
     """Parse Vietnamese word-form amount to integer. E.g. 'bảy trăm nghìn' -> 700000"""
     text = text.strip().lower()
-    # Remove filler words
     text = re.sub(r'\b(đồng|dong|chẵn|chan|chấn|lẻ|le|và|va)\b', '', text).strip()
     
-    ones = {
+    digit_map = {
         'không': 0, 'một': 1, 'mot': 1, 'hai': 2, 'ba': 3, 'bốn': 4, 'bon': 4,
-        'năm': 5, 'nam': 5, 'sáu': 6, 'sau': 6, 'bảy': 7, 'bay': 7,
-        'tám': 8, 'tam': 8, 'chín': 9, 'chin': 9, 'mười': 10, 'muoi': 10,
-        'mươi': 10, 'muoi': 10, 'linh': 0, 'lẻ': 0, 'le': 0,
-    }
-    multipliers = {
-        'trăm': 100, 'tram': 100,
-        'nghìn': 1000, 'nghin': 1000, 'ngàn': 1000, 'ngan': 1000,
-        'triệu': 1000000, 'trieu': 1000000,
-        'tỷ': 1000000000, 'ty': 1000000000, 'tỉ': 1000000000,
+        'năm': 5, 'nam': 5, 'lăm': 5, 'sáu': 6, 'sau': 6, 'bảy': 7, 'bay': 7,
+        'tám': 8, 'tam': 8, 'chín': 9, 'chin': 9, 'linh': 0, 'lẻ': 0, 'le': 0,
     }
     
     tokens = text.split()
     if not tokens:
         return 0
     
+    # Parse group by group. Each group can have: [digit] trăm [digit] mươi [digit]
+    # Groups are separated by nghìn/triệu/tỷ
     result = 0
-    current = 0
+    hundreds = 0   # accumulated hundreds value
+    pending = 0    # last digit waiting for mươi/trăm
+    
+    def flush_group(multiplier=1):
+        nonlocal result, hundreds, pending
+        group_val = hundreds + pending
+        result += group_val * multiplier
+        hundreds = 0
+        pending = 0
     
     for token in tokens:
-        if token in ones:
-            current += ones[token]
-        elif token in multipliers:
-            mult = multipliers[token]
-            if current == 0:
-                current = 1
-            if mult >= 1000:
-                current *= mult
-                result += current
-                current = 0
+        if token in digit_map:
+            pending = digit_map[token]
+        elif token in ('mười', 'muoi', 'mươi'):
+            if pending == 0:
+                hundreds += 10
             else:
-                current *= mult
-        # Skip unknown words (OCR noise)
+                hundreds += pending * 10
+                pending = 0
+        elif token in ('trăm', 'tram'):
+            hundreds += pending * 100
+            pending = 0
+        elif token in ('nghìn', 'nghin', 'ngàn', 'ngan'):
+            if hundreds == 0 and pending == 0:
+                pending = 1
+            flush_group(1000)
+        elif token in ('triệu', 'trieu'):
+            if hundreds == 0 and pending == 0:
+                pending = 1
+            flush_group(1000000)
+        elif token in ('tỷ', 'ty', 'tỉ'):
+            if hundreds == 0 and pending == 0:
+                pending = 1
+            flush_group(1000000000)
     
-    result += current
+    # Flush remaining
+    flush_group(1)
     return result
 
 
@@ -1177,7 +1197,10 @@ def extract_invoice_data(pdf_source, filename=None):
                                 if not data.get("Số hóa đơn"):
                                     crop_box = (int(w * 0.7), 0, w, int(h * 0.15))
                                     cropped = img.crop(crop_box)
-                                    hd_text = pytesseract.image_to_string(cropped, lang='vie+eng', config='--psm 11')
+                                    try:
+                                        hd_text = pytesseract.image_to_string(cropped, lang='vie+eng', config='--psm 11')
+                                    except Exception:
+                                        hd_text = pytesseract.image_to_string(cropped, lang='eng', config='--psm 11')
                                     hd_match = re.search(r'(?:[Ss][ốoéô]|[Nn]o\.?)\s*[:\s]*(\d{4,})', hd_text)
                                     if hd_match:
                                         data["Số hóa đơn"] = hd_match.group(1)
@@ -1186,7 +1209,10 @@ def extract_invoice_data(pdf_source, filename=None):
                                 # MST: crop top 25% full width (seller MST is on the left)
                                 if not data.get("Mã số thuế"):
                                     crop_top = img.crop((0, 0, w, int(h * 0.25)))
-                                    hd_text_top = pytesseract.image_to_string(crop_top, lang='vie+eng', config='--psm 6')
+                                    try:
+                                        hd_text_top = pytesseract.image_to_string(crop_top, lang='vie+eng', config='--psm 6')
+                                    except Exception:
+                                        hd_text_top = pytesseract.image_to_string(crop_top, lang='eng', config='--psm 6')
                                     ignore_mst = ['0106869738', '0100684378', '0101245171', '0305482862', '0103243195', '0101360697']
                                     # Find all MST matches, take first non-blacklisted
                                     for mst_m in re.finditer(r'(?:Mã\s*số\s*thuế|MST|Ma\s*s.\s*thu.)[:\s]*([\d\-\s]+)', hd_text_top, re.IGNORECASE):
