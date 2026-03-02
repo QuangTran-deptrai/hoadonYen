@@ -190,7 +190,7 @@ if st.session_state["processing_complete"] and st.session_state["processed_df"] 
     # Use st.data_editor for inline editing
     edited_df = st.data_editor(
         display_df,
-        use_container_width=True,
+        width='stretch',
         num_rows="fixed",
         key="invoice_editor",
         height=min(800, 45 + len(display_df) * 35),
@@ -309,7 +309,7 @@ if st.session_state["processing_complete"] and st.session_state["processed_df"] 
         file_name="hoadon_tonghop.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         type="primary",
-        use_container_width=True
+        width='stretch'
     )
 
 else:

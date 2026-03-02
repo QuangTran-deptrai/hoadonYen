@@ -1480,13 +1480,28 @@ def extract_invoice_data(pdf_source, filename=None):
                 line_content = full_text[line_start:line_end].lower()
                 
                 # Address keywords to avoid
-                if any(kw in line_content for kw in ['đường', 'phố', 'phường', 'quận', 'thành phố', 'district', 'ward', 'street', 'thửa đất', 'tờ bản đồ', 'ấp ', 'xã ', 'tỉnh']):
-                    # Only skip if it matches the generic "Số:" patterns (which are short/risky)
-                    # If it explicitly says "Số HĐ" or "Invoice No", we might trust it more, 
-                    # but even then "Số HĐ ... Đường..." is unlikely.
-                    # Safe bet: If line looks like address, skip.
-                    print(f"  [Invoice No] Skipped address-like match: '{match.group(0)}' in line '{line_content.strip()}'")
-                    continue
+                address_kws = ['đường', 'phố', 'phường', 'quận', 'thành phố', 'district', 'ward', 'street', 'thửa đất', 'tờ bản đồ', 'ấp ', 'xã ', 'tỉnh']
+                has_address_kw = any(kw in line_content for kw in address_kws)
+                
+                if has_address_kw:
+                    # Position check: In multi-column PDF layouts, "Số: 00213989" 
+                    # often appears at the END of an address line (from adjacent column).
+                    # If the match "Số: XXXX" appears AFTER all address keywords, it's likely
+                    # a real invoice number, not an address number.
+                    match_pos_in_line = start_pos - line_start
+                    last_addr_pos = max(line_content.find(kw) + len(kw) for kw in address_kws if kw in line_content)
+                    
+                    # Also check if match is preceded by "Số:" label (not just a bare number in address)
+                    match_text = full_text[start_pos - 10:end_pos] if start_pos >= 10 else full_text[:end_pos]
+                    has_so_label = bool(re.search(r'[Ss][ốo]\s*:', match_text))
+                    
+                    if match_pos_in_line > last_addr_pos and has_so_label and len(num) >= 5:
+                        # Match is after all address keywords AND has explicit "Số:" label
+                        # This is likely a real invoice number from PDF column merge
+                        print(f"  [Invoice No] Accepted end-of-line match after address: '{match.group(0)}'")
+                    else:
+                        print(f"  [Invoice No] Skipped address-like match: '{match.group(0)}' in line '{line_content.strip()}'")
+                        continue
                 
                 # Check for other junk matches
                 if len(num) < 3: # Too short to be invoice number usually
