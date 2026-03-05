@@ -379,7 +379,7 @@ else:
                     
                     # Auto-save uploaded file to invoices_input/
                     try:
-                        save_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "invoices_input")
+                        save_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploaded_invoices")
                         os.makedirs(save_dir, exist_ok=True)
                         save_path = os.path.join(save_dir, uploaded_file.name)
                         if not os.path.exists(save_path):
