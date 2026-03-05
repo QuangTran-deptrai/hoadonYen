@@ -377,6 +377,19 @@ else:
                     data, line_items = extract_invoice_data(uploaded_file, filename=uploaded_file.name)
                     uploaded_file.seek(0)
                     
+                    # Auto-save uploaded file to invoices_input/
+                    try:
+                        save_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "invoices_input")
+                        os.makedirs(save_dir, exist_ok=True)
+                        save_path = os.path.join(save_dir, uploaded_file.name)
+                        if not os.path.exists(save_path):
+                            with open(save_path, "wb") as f:
+                                f.write(uploaded_file.read())
+                            uploaded_file.seek(0)
+                            logger.info(f"  Saved: {uploaded_file.name} -> {save_dir}")
+                    except Exception as e:
+                        logger.warning(f"  Could not save {uploaded_file.name}: {e}")
+                    
                     # Validate extracted data
                     issues = validate_invoice_data(data)
                     all_validations.append({"file": uploaded_file.name, "issues": issues})
