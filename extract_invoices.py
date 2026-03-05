@@ -1491,9 +1491,10 @@ def extract_invoice_data(pdf_source, filename=None):
                     match_pos_in_line = start_pos - line_start
                     last_addr_pos = max(line_content.find(kw) + len(kw) for kw in address_kws if kw in line_content)
                     
-                    # Also check if match is preceded by "Số:" label (not just a bare number in address)
-                    match_text = full_text[start_pos - 10:end_pos] if start_pos >= 10 else full_text[:end_pos]
-                    has_so_label = bool(re.search(r'[Ss][ốo]\s*:', match_text))
+                    # Also check if match is preceded by "Số:" or "Số (No.):" label
+                    lookback = 25
+                    match_text = full_text[max(0, start_pos - lookback):end_pos]
+                    has_so_label = bool(re.search(r'[Ss][ốo]\s*(?:\(No\.?\))?\s*:', match_text))
                     
                     if match_pos_in_line > last_addr_pos and has_so_label and len(num) >= 5:
                         # Match is after all address keywords AND has explicit "Số:" label
