@@ -1,0 +1,76 @@
+CÔNG TY TNHH MX CATERERS (VIỆT NAM)
+:Tầng 13, Cao Ốc Văn Phòng Phượng Long 2, số 16 đường Nguyễn Trường Tộ, Phường
+Xóm Chiếu, Thành phố Hồ Chí Minh, Việt Nam
+:0 3 1 8 6 0 5 5 1 1
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+(VAT INVOICE) Ký hiệu(Serial): 1C26MMX
+4299
+Ngày(Date) 10 tháng(month) 02 năm(year) 2026 Số(No.):
+(Hóa đơn có mã khởi tạo từ máy tính tiền)
+Mã của CQT: M1-26-TG9Y0-00000009481
+:Cửa hàng Yakiniku Like - Vincom Đồng Khởi
+:17200 :26021017200000715080
+:
+:CÔNG TY CỔ PHẦN DỊCH VỤ PHÂN PHỐI TỔNG HỢP DẦU KHÍ
+:0305482862
+:P.207, Tòa Nhà PetroVietnam, Số 1-5 Lê Duẩn, Phường Sài Gòn, , Thành Phố Hồ Chí Minh
+:
+Đơn vị Thuế Thuế GTGTTổng tiền sau
+STT Tên hàng hóa, dịch vụ Số lượng Đơn giá Thành tiền
+tính suất (VAT thuế
+(No.) (Description) (Quantity) (Unit price) (Amount)
+(Unit) (VAT rate) Amount) (Total amount)
+1 P.ThitTongHop200g Sản phẩm 1 165,740.74 165,741 8% 13,259 179,000
+2 PhanAnComNhat150g Sản phẩm 1 8%
+3 PhanAnChenSalad Sản phẩm 1 8%
+4 TrungLongDao Sản phẩm 1 23,148.15 23,148 8% 1,852 25,000
+5 Tra Nong Nhat Sản phẩm 1 13,888.89 13,889 8% 1,111 15,000
+6 P.ThitTongHop200g Sản phẩm 1 165,740.74 165,741 8% 13,259 179,000
+7 PhanAnComNhat150g Sản phẩm 1 8%
+8 PhanAnChenSalad Sản phẩm 1 8%
+9 Tra Nong Nhat Sản phẩm 1 13,888.89 13,889 8% 1,111 15,000
+Cộng(Total) 382,408 30,592 413,000
+Bằng chữ(In words) Bốn trăm mười ba nghìn đồng
+Số tiền Thuế GTGT Thành tiền đã có thuế GTGT
+Tổng hợp/ Description
+(Amount) (VAT Amount) (Total Amount)
+Tổng tiền không chịu thuế/Amount with non VAT
+Tổng tiền chịu thuế suất 0%/Amount with tax rate 0%
+Tổng tiền chịu thuế suất 5%/Amount with tax rate 5%
+Tổng tiền chịu thuế suất 8%/Amount with tax rate 8% 382,408 30,592 413,000
+Tổng tiền chịu thuế suất 10%/Amount with tax rate 10%
+Người mua hàng(Buyer) Người bán hàng(Seller)
+Trang 1/1
+)nv.eciovnie.www
+-
+2480031010
+:TSM
+-
+nơS
+iáhT
+ệhgn
+gnôc
+nểirt
+táhP
+HHNT
+yt
+gnôC
+,eciovnIE
+mềm
+nầhp
+iởb
+tấuX(
+Địa chỉ(Address)
+Mã số thuế(Tax code)
+Tên cửa hàng (Store name)
+Mã cửa hàng (Store code) Số đơn hàng (Order number)
+Tên người mua hàng(Buyer)
+Tên đơn vị(Company)
+Mã số thuế(Tax code)
+Địa chỉ(Address)
+Số CCCD(Citizen identify number)
+Được ký điện tử bởi
+CÔNG TY TNHH MX CATERERS (VIỆT NAM)
+Ngày ký: 10/02/2026
+Mã nhận hóa đơn(Code for checking): JCR1NTH93GM5 tra cứu tại(Tracking): https://einvoice.mxcaterers.com.vn
+(Cần kiểm tra, đối chiếu khi lập, giao, nhận hóa đơn/ Need to check, compare when making, delivering, receiving invoices)

@@ -1443,10 +1443,24 @@ def extract_invoice_data(pdf_source, filename=None):
                     data["Mã số thuế"] = final_candidates[0]
                     print(f"  [MST] Found via Priority 2 (Standard): {data['Mã số thuế']}")
         
-        # INVOICE NUMBER - Multiple patterns (order matters - more specific first)
+        # Priority 3: Spaced-digit MST on standalone line (e.g. ":0 3 1 8 6 0 5 5 1 1")
+        # Some PDFs have MST value on a separate line from the label, with spaces between digits
+        if not data["Mã số thuế"]:
+            lines = full_text.split('\n')
+            for line in lines[:15]:  # Only check first 15 lines (seller area)
+                # Look for 10+ spaced single digits, possibly preceded by ":"
+                spaced_match = re.match(r'^[:\s]*((?:\d\s+){9,}\d)\s*$', line.strip())
+                if spaced_match:
+                    potential = spaced_match.group(1).replace(' ', '').strip()
+                    if 10 <= len(potential) <= 14 and not any(ign in potential for ign in ignore_mst):
+                        data["Mã số thuế"] = potential
+                        print(f"  [MST] Found via Priority 3 (Spaced digits): {potential}")
+                        break
+        
         inv_patterns = [
             (r'(\d{8})\nSố HĐ\s*/\s*Invoice No\.', 0),  # C26MAP reverse: 00001348\nSố HĐ / Invoice No.:
             (r'(\d{4,8})\n\s*Số\s*\(?No\.?\)?[:\s]*', 0),  # 1C26MTA reverse: 4699\nSố (No.):
+            (r'(\d{4,8})\n[^\n]*Số\(No\.?\)[:\s]*', 0),  # C26MMX reverse: 4299\nNgày...Số(No.):
             (r'Số HĐ\s*/\s*Invoice No\.?[:\s]*[\n\s]*(\d{5,})', re.DOTALL),  # C26MAP: Số HĐ / Invoice No.:\n00001348
             (r'\(\s*VAT\s*INVOICE\s*\)[:\s]*(\d+)', 0),  # Special case: (VAT INVOICE) 00000043
             (r'Invoice No\.?[:\s]*[\n\s]*(\d{5,})', re.DOTALL),  # Generic Invoice No: 00001348
@@ -1664,9 +1678,17 @@ def extract_invoice_data(pdf_source, filename=None):
 
         # Mã CQT (Standard PDF)
         # Matches: "Mã của cơ quan thuế: ...", "Mã CQT: ..."
-        cqt_match = re.search(r'(?:Mã|Ma)\s*(?:của)?\s*(?:CQ|cơ\s*quan)\s*thuế[:\s]*([A-Z0-9\-]+)', full_text, re.IGNORECASE)
-        if cqt_match:
-            data["Mã CQT"] = cqt_match.group(1)
+        cqt_patterns = [
+            r'(?:Mã|Ma)\s*(?:của)?\s*(?:CQT|CQ\s*thuế|cơ\s*quan\s*thuế)[:\s]*([A-Z0-9\-]+)',  # "Mã của CQT:" or "Mã CQT:"
+            r'(?:Mã|Ma)\s*(?:của)?\s*(?:CQ|cơ\s*quan)\s*thuế[:\s]*([A-Z0-9\-]+)',  # "Mã của cơ quan thuế:"
+            r'Tax\s*authority\s*code[:\s]*([A-Z0-9\-]+)',  # English
+            r'MCQT\s*[:\s]+([A-Za-z0-9\-]+)',  # Tiepkhach format
+        ]
+        for cqt_p in cqt_patterns:
+            cqt_match = re.search(cqt_p, full_text, re.IGNORECASE)
+            if cqt_match:
+                data["Mã CQT"] = cqt_match.group(1)
+                break
             
         # SERIAL NUMBER (Ký hiệu) - Multiple patterns INCLUDING "Series"
         serial_patterns = [
@@ -2408,25 +2430,31 @@ def extract_invoice_data(pdf_source, filename=None):
                 for r in [0, 5, 8, 10]:
                     key = f"Thuế {r}%"
                     if tax_map[r] > 0:
-                        # Only overwrite if empty or significantly different (likely better data from items than bad footer parse)
                         curr_val = parse_money(data[key])
                         diff = abs(curr_val - tax_map[r])
                         
                         # Overwrite strategy:
-                        # 1. If Curr is 0/Empty -> Overwrite
-                        # 2. If Diff is Huge (> 50% of Calc) -> Trust Calc (Fix Garbage regex capture)
-                        # NOTE: Do NOT overwrite small diffs. Trust the OCR/Document if it's close.
+                        # 1. Skip tiny item-aggregated values (<=10) - likely noise from item parsing
+                        # 2. If Curr is 0/Empty AND calc > 10 -> Overwrite
+                        # 3. If Diff is huge (> 50% of Calc) -> Trust Calc (Fix Garbage regex capture)
+                        # NOTE: Do NOT overwrite small diffs. Trust the document summary.
+                        if tax_map[r] <= 10:
+                             continue  # Skip noise
                         if curr_val == 0 or diff > tax_map[r] * 0.5:
                              data[key] = format_money(tax_map[r])
                              
                 # Recalculate Total Tax if it looks wrong or empty
-                total_item_tax = sum(tax_map.values())
+                total_item_tax = sum(v for v in tax_map.values() if v > 10)
                 curr_total_tax = parse_money(data["Tiền thuế"])
                 
-                # If total tax is missing or significantly smaller than item sum (e.g. captured only one rate), update it
-                if curr_total_tax == 0 or (total_item_tax > curr_total_tax and total_item_tax > 1000):
+                # Only overwrite if total tax is missing, OR item sum is MUCH larger (>5% diff)
+                # When close, trust the document summary line over item aggregation (rounding)
+                if curr_total_tax == 0 and total_item_tax > 0:
                      data["Tiền thuế"] = format_money(total_item_tax)
                      print(f"  [AUTO-AGGR] Aggregated Tax from items: {total_item_tax}")
+                elif curr_total_tax > 0 and total_item_tax > curr_total_tax * 1.05:
+                     data["Tiền thuế"] = format_money(total_item_tax)
+                     print(f"  [AUTO-AGGR] Aggregated Tax from items (override): {total_item_tax}")
 
             # FINAL CHECK: Sanity check Tax Amount (Run AFTER post-process updates)
             if data["Tiền thuế"] and (data["Số tiền trước Thuế"] or data["Số tiền sau"]):
